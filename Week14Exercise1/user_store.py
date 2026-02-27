@@ -23,7 +23,7 @@ class UserStore:
         for user in users:
             if user["id"] == user_id:
                 return user
-            return None
+        return None
 
     def update_user(self, user_id, updated_data):
         users = self.load()
