@@ -1,21 +1,18 @@
-from fastapi import FastAPI
-from routes import users
+devices = [ 
+("192.168.1.10", [22, 80, 443]),
+("192.168.1.11", [21, 22, 80]),
+("192.168.1.12", [23,80, 3389])]
 
-app = FastAPI(
-    title="User Management API",
-    description="FastAPI backend for managing users",
-    version="1.0.0"
-)
-app.include_router(users.router, prefix="/users", tags=["Users"])
+risky_ports = [21, 23, 3389]
 
-@app.get("/")
-def health_check():
-    return {"status": "healthy", "message": "API is running"}
+print("Scanning network devices...")
 
-@app.get("/health")
-def health_detail():
-    return {
-        "status": "healthy",
-        "message": "API is running",
-        "version": "1.0.0",
-    }
+risks_found = 0
+
+for ip, ports in devices:
+    for port in ports:
+        if port in risky_ports:
+            print(f"WARNING: {ip} has risky port {port} open")
+            risks_found += 1
+
+print(f"Scan complete: {risks_found} security risks found")
