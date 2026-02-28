@@ -1,56 +1,50 @@
-#library system
-class Book:
-    def __init__(self, title, author, isbn):
-        self.title = title
-        self.author = author
-        self.isbn = isbn
+# file manager with os module
 
-    def display_info(self):
-        return f"'{self.title}' by {self.author} (ISBN: {self.isbn})"
+import os
 
-class Library:
-    def __init__(self, name):
-        self.name = name
-        self.books = []
+print("Working Directory:")
+print(os.getcwd())
 
-    def add_book(self, book):
-        self.books.append(book)
-        return f"Added: {book.display_info()}"
+folder_name = "files"
 
-    def remove_book(self, title):
-        for book in self.books:
-            if book.title.lower() == title.lower():
-                self.books.remove(book)
-                return f"Removed: {book.display_info()}"
-        return f"Book '{title}' not found."
+if not os.path.exists(folder_name):
+    os.mkdir(folder_name)
+    print(f'Folder "{folder_name}" created successfully.')
+else:
+    print(f'Folder "{folder_name}" already exists.')
 
-    def list_books(self):
-        if not self.books:
-            return f"{self.name} has no books."
-        result = f"\n=== Books in {self.name} ===\n"
-        for i, book in enumerate(self.books, 1):
-            result += f"{i}. {book.display_info()}\n"
-        return result
+file_names = ["file1.txt", "file2.txt", "file3.txt"]
 
-    def search_by_title(self, search_term):
-        found = [book for book in self.books
-                 if search_term.lower() in book.title.lower()]
-        if found:
-            result = f"\nFound {len(found)} book(s):\n"
-            for book in found:
-                result += f"- {book.display_info()}\n"
-            return result
-        return f"Book '{search_term}' not found"
+for file in file_names:
+    file_path = os.path.join(folder_name, file)
+    with open(file_path, "w") as f:
+        pass   # creates empty file
+    print(f'File "{file}" created.')
 
-    #library test
+print("\nFiles inside the folder:")
+files = os.listdir(folder_name)
+for file in files:
+    print(file)
 
-    library = Library()
+old_name = os.path.join(folder_name, "file1.txt")
+new_name = os.path.join(folder_name, "renamed_file.txt")
 
-    book1 = Book("Sweetbitter", "Stephanie Danler", "1111")
-    book2 = Book("Masters of Death", "Olivie Blake", "2222")
-    book3 = Book("Sword Catcher", "Cassandra Clare", "3333")
+if os.path.exists(old_name):
+    os.rename(old_name, new_name)
+    print('\nFile "file1.txt" renamed to "renamed_file.txt".')
+else:
+    print("File to rename not found.")
 
-    library.list_books()
-    library.search_book_by_title("Sweetbitter")
-    library.remove_book("Sword Catcher")
-    library.list_books()
+#updated list
+print("\nUpdated file list:")
+files = os.listdir(folder_name)
+for file in files:
+    print(file)
+
+for file in os.listdir(folder_name):
+    file_path = os.path.join(folder_name, file)
+    os.remove(file_path)
+    print(f'File "{file}" deleted.')
+
+os.rmdir(folder_name)
+print(f'Folder "{folder_name}" deleted successfully.')

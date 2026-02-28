@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d730d9ee-aef2-4f72-8ab3-f0cce529724f" name="Changes" comment="" />
+    <list default="true" id="701f094e-a111-47b3-b985-eb98b16798e7" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
+  "customColor": "",
+  "associatedIndex": 1
 }]]></component>
-  <component name="ProjectId" id="3AHKdFZtLdOIOfMIfh4UFlSewxJ" />
+  <component name="ProjectId" id="3AHLydzVZtBd8t5ahPjlDlvOqOE" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
     "junie.onboarding.icon.badge.shown": "true",
     "to.speed.mode.migration.done": "true"
   }
@@ -32,11 +38,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="d730d9ee-aef2-4f72-8ab3-f0cce529724f" name="Changes" comment="" />
-      <created>1772244140785</created>
+      <changelist id="701f094e-a111-47b3-b985-eb98b16798e7" name="Changes" comment="" />
+      <created>1772244804818</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1772244140785</updated>
+      <updated>1772244804818</updated>
     </task>
     <servers />
   </component>
