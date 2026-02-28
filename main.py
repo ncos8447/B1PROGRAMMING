@@ -1,58 +1,62 @@
-#student grade analyzer
+#personal expense tracker
 
-#part a
-student_records = []
-stats = {}
+#data structure
+expense_records = []
+category_totals = {}
+unique_categories = set()
 
-for i in range(1, 7):
-    name = str(input(f"Student's name: "))
+print("Welcome to Personal Expense Tracker!\n")
 
-    #score validation
+#collect data
+
+num_expenses = 0
+while num_expenses < 5:
+    print(f"Enter Expense {num_expenses + 1}:")
+    category = input("Category (e.g., food, transport): ").strip()
     while True:
         try:
-            score = float(input("  Score (0-100): "))
-            if 0 <= score <= 100:
+            amount = float(input("  Amount ($): "))
+            if amount >= 0:
                 break
             else:
-                print("    Score must be between 0 and 100.")
+                print("Amount cannot be negative.")
         except ValueError:
-            print("    Please enter a valid number.")
-    student_records.append((name, score))
+            print("Please enter a valid number.")
 
-#stats
+    date = input("  Date (YYYY-MM-DD): ").strip()
 
-scores = [score for name, score in student_records]
+    expense_records.append((category, amount, date))
 
-stats["highest"] = max(scores)
-stats["lowest"] = min(scores)
-stats["average"] = sum(scores) / len(scores)
+    num_expenses += 1
 
-unique_scores = set(scores)
+#categorize
+for category, amount, _ in expense_records:
+    unique_categories.add(category)
+    category_totals[category] = category_totals.get(category, 0) + amount
 
-grade_distribution = {}
-for score in scores:
-    grade_distribution[str(score)] = grade_distribution.get(str(score), 0) + 1
+#calculate overall stats
+amounts = [amount for _, amount, _ in expense_records]
 
-#display results
+overall_stats = {
+    'total_spending': sum(amounts),
+    'average_expense': sum(amounts) / len(amounts) if amounts else 0,
+    'highest_expense': max(amounts) if amounts else 0,
+    'lowest_expense': min(amounts) if amounts else 0
+}
 
-print("\n=== STUDENT RECORDS ===")
+#spending report
 
-for i in range(1, 7):
-    print(f"{i}. {student_records[i-1][0]}: {student_records[i-1][1]}")
+print("\n=== OVERALL SPENDING SUMMARY ===")
+print(f"Total Spending: ${overall_stats['total_spending']:.2f}")
+print(f"Average Expense: ${overall_stats['average_expense']:.2f}")
+print(f"Highest Expense: ${overall_stats['highest_expense']:.2f}")
+print(f"Lowest Expense: ${overall_stats['lowest_expense']:.2f}")
 
-print("\n=== STATISTICS ===")
+print("\n=== OVERALL SPENDING SUMMARY ===")
+print(unique_categories)
+print(f"Total unique categories: {len(unique_categories)}")
 
-print(f"Highest Score: {stats["highest"]}")
-print(f"Lowest Score: {stats["lowest"]}")
-print(f"Average Score: {stats["average"]:.2f}")
+print("\n=== OVERALL SPENDING SUMMARY ===")
+for category, amount in category_totals.items():
+    print(f"{category}: ${amount:.2f}")
 
-print("\n=== UNIQUE SCORES ===")
-print(unique_scores)
-print(f"Total unique scores: {len(unique_scores)}")
-
-print("\n=== GRADE DISTRIBUTION ===")
-for score, number in sorted(grade_distribution.items(), reverse=True):
-    if number == 1:
-        print(f"Score {score}: {number} student")
-    else:
-        print(f"Score {score}: {number} students")
