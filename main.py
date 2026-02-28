@@ -1,18 +1,26 @@
-devices = [ 
-("192.168.1.10", [22, 80, 443]),
-("192.168.1.11", [21, 22, 80]),
-("192.168.1.12", [23,80, 3389])]
+login_attempts = [
+("alice", "success"),
+("bob", "failed"),
+("bob", "failed"),
+("charlie", "success"),
+("bob", "failed"),
+("alice", "failed")]
 
-risky_ports = [21, 23, 3389]
+failed_counts = {} 
 
-print("Scanning network devices...")
+print("Checking login attempts...")
 
-risks_found = 0
+#check and count fails
+for username, status in login_attempts:
+    if status == "failed":
+        if username in failed_counts: 
+            failed_counts[username] = failed_counts[username] + 1
+        else:
+            failed_counts[username] = 1
 
-for ip, ports in devices:
-    for port in ports:
-        if port in risky_ports:
-            print(f"WARNING: {ip} has risky port {port} open")
-            risks_found += 1
+# Check for 3 or more fails
+for username in failed_counts:
+    if failed_counts[username] >= 3:
+        print(f"ALERT: User {username} has {str(failed_counts[username])} failed login attempts")
 
-print(f"Scan complete: {risks_found} security risks found")
+print("Security check complete")
