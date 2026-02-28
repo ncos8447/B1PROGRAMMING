@@ -1,82 +1,160 @@
-#product Pricing Manager
+import re
+import logging
+from collections import defaultdict, Counter
+from datetime import datetime
 
-#sample product data (name, base price, category, tier)
-products_data = [
-    "Laptop,1200,Electronics,Premium",
-    "Jeans,80,Clothing,Standard",
-    "Book,25,Books,Budget",
-    "Coffee Maker,150,Home,Premium"
-]
+#setup logging
+log_filename = f"analysis_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename),
+        logging.StreamHandler()
+    ]
+)
 
-def calculate_discount(category, tier):
-    category_discounts = {
-        "Electronics": 10,
-        "Clothing": 15,
-        "Books": 5,
-        "Home": 12
-    }
-    tier_discounts = {
-        "Premium": 5,
-        "Standard": 0,
-        "Budget": 2
-    }
+#file to analyze
+log_file = "access.log"
+log_pattern = re.compile(r'(\S+) \S+ \S+ \[(.*?)] "(\S+) (\S+) \S+" (\d{3}) (\S+) "([^"]+)"')
 
-    category_discount = category_discounts.get(category, 0)
-    tier_discount = tier_discounts.get(tier, 0)
+#stats
+total_requests = 0
+unique_ips = set()
+http_methods = Counter()
+urls = Counter()
+status_codes = Counter()
+errors = []
 
-    return category_discount + tier_discount
+#security monitoring
+failed_logins = defaultdict(list)
+security_incidents = []
+forbidden_access = []
 
-products = []
-total_discount_percentages = []
+#known suspicious user agents
+suspicious_agents = ["sqlmap", "nikto", "fuzzer", "acunetix"]
 
-for line_num, line in enumerate(products_data, start=1):
-    try:
-        name, base_price_str, category, tier = line.split(',')
-        base_price = float(base_price_str)
-
-        #discounts
-        discount_pct = calculate_discount(category, tier)
-        discount_amt = base_price * (discount_pct / 100)
-        final_price = base_price - discount_amt
-
-        #store the data
-        products.append({
-            'name': name,
-            'base_price': base_price,
-            'discount_pct': discount_pct,
-            'discount_amt': discount_amt,
-            'final_price': final_price
-        })
-        total_discount_percentages.append(discount_pct)
-
-    except ValueError:
-        print(f"Line {line_num}: Invalid format or price '{line}' skipped.")
-
-#report
+# read and process log file
 try:
-    with open('pricing_report.txt', 'w') as report:
-        report.write("PRICING REPORT\n")
-        report.write("="*75 + "\n")
-        report.write(f"{'Product Name':30} {'Base Price':>12} {'Discount %':>12} "
-                     f"{'Discount $':>12} {'Final Price':>12}\n")
-        report.write("-"*75 + "\n")
+    with open(log_file, "r") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
 
-        for product in products:
-            report.write(f"{product['name']:30} "
-                         f"${product['base_price']:>10.2f} "
-                         f"{product['discount_pct']:>10.2f}% "
-                         f"${product['discount_amt']:>10.2f} "
-                         f"${product['final_price']:>10.2f}\n")
+            match = log_pattern.match(line)
+            if not match:
+                logging.warning(f"line {line_num}: malformed entry skipped")
+                continue
 
-except IOError:
-    print("Error: Could not write to 'pricing_report.txt'.")
-    exit(1)
+            ip, timestamp, method, url, status, size, user_agent = match.groups()
+            status = int(status)
 
-#summary
-if products:
-    total_products = len(products)
-    avg_discount = sum(total_discount_percentages) / total_products
-    print(f"Total products processed: {total_products}")
-    print(f"Average discount applied: {avg_discount:.2f}%")
-else:
-    print("No products were processed.")
+            # stats
+            total_requests += 1
+            unique_ips.add(ip)
+            http_methods[method] += 1
+            urls[url] += 1
+            status_codes[status] += 1
+
+            # error log
+            if 400 <= status < 600:
+                errors.append(f"[{timestamp}] {ip} {method} {url} status: {status}")
+
+            # security analysis
+            if url == "/login" and status == 401:
+                failed_logins[ip].append(timestamp)
+                if len(failed_logins[ip]) >= 3:
+                    incident = f"possible brute force: {ip} - {len(failed_logins[ip])} failed logins"
+                    if incident not in security_incidents:
+                        security_incidents.append(incident)
+                        logging.warning(incident)
+
+            if status == 403:
+                incident = f"forbidden access: {ip} -> {url}"
+                forbidden_access.append(incident)
+                security_incidents.append(incident)
+                logging.warning(incident)
+
+            if any(agent.lower() in user_agent.lower() for agent in suspicious_agents):
+                incident = f"suspicious user agent: {ip} -> {user_agent}"
+                security_incidents.append(incident)
+                logging.warning(incident)
+
+            if any(word in url.lower() for word in ["union", "select", "drop", "insert", "--", ";"]):
+                incident = f"potential sql injection: {ip} -> {url}"
+                security_incidents.append(incident)
+                logging.warning(incident)
+
+except FileNotFoundError:
+    logging.error(f"log file '{log_file}' not found")
+    print(f"error: {log_file} not found")
+except PermissionError:
+    logging.error(f"permission denied reading '{log_file}'")
+    print(f"error: permission denied for {log_file}")
+
+#write summary report
+try:
+    with open("summary_report.txt", "w") as f:
+        f.write("SERVER LOG SUMMARY\n")
+        f.write("=" * 50 + "\n")
+        f.write(f"total requests: {total_requests}\n")
+        f.write(f"unique visitors: {len(unique_ips)}\n\n")
+
+        f.write("http methods:\n")
+        for m, c in http_methods.items():
+            f.write(f" {m}: {c}\n")
+
+        f.write("\nmost requested urls:\n")
+        for u, c in urls.most_common(5):
+            f.write(f" {u}: {c}\n")
+
+        f.write("\nstatus codes:\n")
+        for code, c in sorted(status_codes.items()):
+            f.write(f" {code}: {c}\n")
+
+except PermissionError:
+    logging.error("cannot write summary_report.txt")
+
+# write security report
+try:
+    with open("security_incidents.txt", "w") as f:
+        f.write("SECURITY INCIDENTS\n")
+        f.write("=" * 50 + "\n")
+        f.write(f"total incidents: {len(security_incidents)}\n\n")
+
+        if failed_logins:
+            f.write("brute force attempts:\n")
+            for ip, attempts in failed_logins.items():
+                if len(attempts) >= 3:
+                    f.write(f"{ip}: {len(attempts)} failed logins\n")
+            f.write("\n")
+
+        if forbidden_access:
+            f.write("forbidden access:\n")
+            for incident in forbidden_access:
+                f.write(f"{incident}\n")
+
+        for incident in security_incidents:
+            f.write(f"{incident}\n")
+
+except PermissionError:
+    logging.error("cannot write security_incidents.txt")
+
+#write error log
+try:
+    with open("error_log.txt", "w") as f:
+        f.write("HTTP ERRORS\n")
+        f.write("=" * 50 + "\n")
+        f.write(f"total errors: {len(errors)}\n\n")
+        for e in errors:
+            f.write(f"{e}\n")
+except PermissionError:
+    logging.error("cannot write error_log.txt")
+
+# final console output
+print("analysis complete")
+print(f"total requests: {total_requests}")
+print(f"security incidents: {len(security_incidents)}")
+print(f"errors detected: {len(errors)}")
+print("reports generated: summary_report.txt, security_incidents.txt, error_log.txt")
