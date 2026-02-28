@@ -1,62 +1,82 @@
-#personal expense tracker
+#product Pricing Manager
 
-#data structure
-expense_records = []
-category_totals = {}
-unique_categories = set()
+#sample product data (name, base price, category, tier)
+products_data = [
+    "Laptop,1200,Electronics,Premium",
+    "Jeans,80,Clothing,Standard",
+    "Book,25,Books,Budget",
+    "Coffee Maker,150,Home,Premium"
+]
 
-print("Welcome to Personal Expense Tracker!\n")
+def calculate_discount(category, tier):
+    category_discounts = {
+        "Electronics": 10,
+        "Clothing": 15,
+        "Books": 5,
+        "Home": 12
+    }
+    tier_discounts = {
+        "Premium": 5,
+        "Standard": 0,
+        "Budget": 2
+    }
 
-#collect data
+    category_discount = category_discounts.get(category, 0)
+    tier_discount = tier_discounts.get(tier, 0)
 
-num_expenses = 0
-while num_expenses < 5:
-    print(f"Enter Expense {num_expenses + 1}:")
-    category = input("Category (e.g., food, transport): ").strip()
-    while True:
-        try:
-            amount = float(input("  Amount ($): "))
-            if amount >= 0:
-                break
-            else:
-                print("Amount cannot be negative.")
-        except ValueError:
-            print("Please enter a valid number.")
+    return category_discount + tier_discount
 
-    date = input("  Date (YYYY-MM-DD): ").strip()
+products = []
+total_discount_percentages = []
 
-    expense_records.append((category, amount, date))
+for line_num, line in enumerate(products_data, start=1):
+    try:
+        name, base_price_str, category, tier = line.split(',')
+        base_price = float(base_price_str)
 
-    num_expenses += 1
+        #discounts
+        discount_pct = calculate_discount(category, tier)
+        discount_amt = base_price * (discount_pct / 100)
+        final_price = base_price - discount_amt
 
-#categorize
-for category, amount, _ in expense_records:
-    unique_categories.add(category)
-    category_totals[category] = category_totals.get(category, 0) + amount
+        #store the data
+        products.append({
+            'name': name,
+            'base_price': base_price,
+            'discount_pct': discount_pct,
+            'discount_amt': discount_amt,
+            'final_price': final_price
+        })
+        total_discount_percentages.append(discount_pct)
 
-#calculate overall stats
-amounts = [amount for _, amount, _ in expense_records]
+    except ValueError:
+        print(f"Line {line_num}: Invalid format or price '{line}' skipped.")
 
-overall_stats = {
-    'total_spending': sum(amounts),
-    'average_expense': sum(amounts) / len(amounts) if amounts else 0,
-    'highest_expense': max(amounts) if amounts else 0,
-    'lowest_expense': min(amounts) if amounts else 0
-}
+#report
+try:
+    with open('pricing_report.txt', 'w') as report:
+        report.write("PRICING REPORT\n")
+        report.write("="*75 + "\n")
+        report.write(f"{'Product Name':30} {'Base Price':>12} {'Discount %':>12} "
+                     f"{'Discount $':>12} {'Final Price':>12}\n")
+        report.write("-"*75 + "\n")
 
-#spending report
+        for product in products:
+            report.write(f"{product['name']:30} "
+                         f"${product['base_price']:>10.2f} "
+                         f"{product['discount_pct']:>10.2f}% "
+                         f"${product['discount_amt']:>10.2f} "
+                         f"${product['final_price']:>10.2f}\n")
 
-print("\n=== OVERALL SPENDING SUMMARY ===")
-print(f"Total Spending: ${overall_stats['total_spending']:.2f}")
-print(f"Average Expense: ${overall_stats['average_expense']:.2f}")
-print(f"Highest Expense: ${overall_stats['highest_expense']:.2f}")
-print(f"Lowest Expense: ${overall_stats['lowest_expense']:.2f}")
+except IOError:
+    print("Error: Could not write to 'pricing_report.txt'.")
+    exit(1)
 
-print("\n=== OVERALL SPENDING SUMMARY ===")
-print(unique_categories)
-print(f"Total unique categories: {len(unique_categories)}")
-
-print("\n=== OVERALL SPENDING SUMMARY ===")
-for category, amount in category_totals.items():
-    print(f"{category}: ${amount:.2f}")
-
+#summary
+if products:
+    total_products = len(products)
+    avg_discount = sum(total_discount_percentages) / total_products
+    print(f"Total products processed: {total_products}")
+    print(f"Average discount applied: {avg_discount:.2f}%")
+else:
+    print("No products were processed.")
