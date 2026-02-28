@@ -83,3 +83,4 @@ def delete_user(id: int):
             write_users(users)
             return {"message": "User deleted"}
     raise HTTPException(status_code=404, detail="User not found")
+

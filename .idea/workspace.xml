@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="90ee1cba-d6c1-4b04-bbe1-91dfc5746b02" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Week11.iml" afterDir="false" />
+    <list default="true" id="1cfbb1c7-ef46-4b83-96ca-9e27c32b3b3a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/Week13.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
@@ -17,26 +17,13 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/ncos8447/B1PROGRAMMING.git",
-    "accountId": "0497c6fe-e12f-4321-a953-ad5002f3f125"
-  }
-}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
+  "associatedIndex": 3
 }]]></component>
-  <component name="ProjectId" id="3AHMC0Fv6n5LtHDnwUAEqPfh25F" />
+  <component name="ProjectId" id="3AHPte2cuCkJKjUrOG6tVNNrduu" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -61,11 +48,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="90ee1cba-d6c1-4b04-bbe1-91dfc5746b02" name="Changes" comment="" />
-      <created>1772244910561</created>
+      <changelist id="1cfbb1c7-ef46-4b83-96ca-9e27c32b3b3a" name="Changes" comment="" />
+      <created>1772246738575</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1772244910561</updated>
+      <updated>1772246738575</updated>
     </task>
     <servers />
   </component>
