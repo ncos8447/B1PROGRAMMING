@@ -1,51 +1,113 @@
-import json
-import os
+import sqlite3
 
 class UserStore:
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, db_path):
+        # save database path
+        self.db_path = db_path
+        self.init_db()
+
+    def init_db(self):
+        # create users table if it doesn't exist
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL
+            )
+        """)
+
+        conn.commit()
+        conn.close()
 
     def load(self):
-        if not os.path.isfile(self.file_path):
-            return []
-        try:
-            with open(self.file_path, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return []
+        # return all users as list of dictionaries
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
 
-    def save(self, users):
-        with open(self.file_path, "w") as f:
-            json.dump(users, f)
+        cursor.execute("SELECT id, name, email FROM users")
+        rows = cursor.fetchall()
+
+        conn.close()
+
+        users = []
+        for row in rows:
+            users.append({
+                "id": row[0],
+                "name": row[1],
+                "email": row[2]
+            })
+
+        return users
+
+    def save(self, user_data):
+        # insert new user into database
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "INSERT INTO users (name, email) VALUES (?, ?)",
+            (user_data["name"], user_data["email"])
+        )
+
+        conn.commit()
+        new_id = cursor.lastrowid
+        conn.close()
+
+        return new_id
 
     def find_by_id(self, user_id):
-        users = self.load()
-        for user in users:
-            if user["id"] == user_id:
-                return user
+        # find user by id
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT id, name, email FROM users WHERE id = ?",
+            (user_id,)
+        )
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return {
+                "id": row[0],
+                "name": row[1],
+                "email": row[2]
+            }
+
         return None
 
     def update_user(self, user_id, updated_data):
-        users = self.load()
-        for user in users:
-            if user["id"] == user_id:
-                user.update(updated_data)
-                self.save(users)
-            return True
-        return False
+        # update user using sql update
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
 
-    def get_next_id(self):
-        users = self.load()
-        if not users:
-            return 1
-        return max(user["id"] for user in users) + 1
+        cursor.execute(
+            "UPDATE users SET name = ?, email = ? WHERE id = ?",
+            (updated_data["name"], updated_data["email"], user_id)
+        )
+
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+
+        return success
 
     def delete_user(self, user_id):
-        users = self.load()
+        # delete user using sql delete
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
 
-        for i, user in enumerate(users):
-            if user["id"] == user_id:
-                users.pop(i)
-                self.save(users)
-            return True
-        return False
+        cursor.execute(
+            "DELETE FROM users WHERE id = ?",
+            (user_id,)
+        )
+
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+
+        return success
