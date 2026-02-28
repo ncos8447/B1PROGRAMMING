@@ -1,11 +1,8 @@
 from pydantic import BaseModel
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     name: str
     email: str
 
-class UserCreate(UserBase):
-    pass
-
-class User(UserBase):
+class User(UserCreate):
     id: int
