@@ -1,160 +1,114 @@
-import re
+#user authentification
 import logging
-from collections import defaultdict, Counter
-from datetime import datetime
 
-#setup logging
-log_filename = f"analysis_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(log_filename),
-        logging.StreamHandler()
-    ]
-)
+logging.basicConfig(level=logging.INFO)
 
-#file to analyze
-log_file = "access.log"
-log_pattern = re.compile(r'(\S+) \S+ \S+ \[(.*?)] "(\S+) (\S+) \S+" (\d{3}) (\S+) "([^"]+)"')
+class User:
+    MAX_FAILED_ATTEMPTS = 3
 
-#stats
-total_requests = 0
-unique_ips = set()
-http_methods = Counter()
-urls = Counter()
-status_codes = Counter()
-errors = []
+    def __init__(self, username, password, privilege="user"):
+        self.set_username(username)
+        self.__password_hash = self.hash_password(password)
+        self.set_privilege(privilege)
+        self.__failed_attempts = 0
+        self.__is_locked = False
 
-#security monitoring
-failed_logins = defaultdict(list)
-security_incidents = []
-forbidden_access = []
+    def hash_password(self, password):
+        return f"hashed_{password}"
 
-#known suspicious user agents
-suspicious_agents = ["sqlmap", "nikto", "fuzzer", "acunetix"]
+    def set_username(self, username):
+        if not username or len(username) < 3:
+            raise ValueError("Username must be at least 3 characters long.")
+        self.username = username
 
-# read and process log file
-try:
-    with open(log_file, "r") as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
+    def get_username(self):
+        return self.username
 
-            match = log_pattern.match(line)
-            if not match:
-                logging.warning(f"line {line_num}: malformed entry skipped")
-                continue
+    # privilege setter
+    def set_privilege(self, privilege):
+        allowed_roles = ["user", "admin"]
+        if privilege not in allowed_roles:
+            raise ValueError("Invalid privilege level.")
+        self.privilege = privilege
 
-            ip, timestamp, method, url, status, size, user_agent = match.groups()
-            status = int(status)
+    def get_privilege(self):
+        return self.privilege
 
-            # stats
-            total_requests += 1
-            unique_ips.add(ip)
-            http_methods[method] += 1
-            urls[url] += 1
-            status_codes[status] += 1
+    # authenticate user
+    def authenticate(self, password):
+        if self.__is_locked:
+            logging.warning(f"Locked account login attempt: {self.username}")
+            return False
 
-            # error log
-            if 400 <= status < 600:
-                errors.append(f"[{timestamp}] {ip} {method} {url} status: {status}")
+        if self.__password_hash == self.hash_password(password):
+            self.__failed_attempts = 0
+            logging.info(f"Successful login: {self.username}")
+            return True
+        else:
+            self.__failed_attempts += 1
+            logging.warning(f"Failed login attempt {self.__failed_attempts} for {self.username}")
 
-            # security analysis
-            if url == "/login" and status == 401:
-                failed_logins[ip].append(timestamp)
-                if len(failed_logins[ip]) >= 3:
-                    incident = f"possible brute force: {ip} - {len(failed_logins[ip])} failed logins"
-                    if incident not in security_incidents:
-                        security_incidents.append(incident)
-                        logging.warning(incident)
+            if self.__failed_attempts >= User.MAX_FAILED_ATTEMPTS:
+                self.__is_locked = True
+                logging.critical(f"Account locked: {self.username}")
 
-            if status == 403:
-                incident = f"forbidden access: {ip} -> {url}"
-                forbidden_access.append(incident)
-                security_incidents.append(incident)
-                logging.warning(incident)
+            return False
 
-            if any(agent.lower() in user_agent.lower() for agent in suspicious_agents):
-                incident = f"suspicious user agent: {ip} -> {user_agent}"
-                security_incidents.append(incident)
-                logging.warning(incident)
+    # safe user info display
+    def display_info(self):
+        return {
+            "username": self.username,
+            "privilege": self.privilege,
+            "account_locked": self.__is_locked
+        }
 
-            if any(word in url.lower() for word in ["union", "select", "drop", "insert", "--", ";"]):
-                incident = f"potential sql injection: {ip} -> {url}"
-                security_incidents.append(incident)
-                logging.warning(incident)
+    # prevent direct password access
+    @property
+    def password(self):
+        raise AttributeError("Password is private and cannot be accessed directly.")
 
-except FileNotFoundError:
-    logging.error(f"log file '{log_file}' not found")
-    print(f"error: {log_file} not found")
-except PermissionError:
-    logging.error(f"permission denied reading '{log_file}'")
-    print(f"error: permission denied for {log_file}")
+    # unlock account
+    def unlock_account(self, admin_user):
+        if admin_user.get_privilege() == "admin":
+            self.__failed_attempts = 0
+            self.__is_locked = False
+            logging.info(f"Account unlocked by admin: {admin_user.get_username()}")
+        else:
+            logging.warning(f"Unauthorized unlock attempt by: {admin_user.get_username()}")
+            raise PermissionError("Only admin users can unlock accounts.")
 
-#write summary report
-try:
-    with open("summary_report.txt", "w") as f:
-        f.write("SERVER LOG SUMMARY\n")
-        f.write("=" * 50 + "\n")
-        f.write(f"total requests: {total_requests}\n")
-        f.write(f"unique visitors: {len(unique_ips)}\n\n")
 
-        f.write("http methods:\n")
-        for m, c in http_methods.items():
-            f.write(f" {m}: {c}\n")
+# demo section
+if __name__ == "__main__":
 
-        f.write("\nmost requested urls:\n")
-        for u, c in urls.most_common(5):
-            f.write(f" {u}: {c}\n")
+    # create users
+    admin = User("adminUser", "AdminPass123", "admin")
+    user1 = User("johnDoe", "UserPass123", "user")
 
-        f.write("\nstatus codes:\n")
-        for code, c in sorted(status_codes.items()):
-            f.write(f" {code}: {c}\n")
+    print("=== authentication demo ===")
 
-except PermissionError:
-    logging.error("cannot write summary_report.txt")
+    # correct login
+    print("correct password:", user1.authenticate("UserPass123"))
 
-# write security report
-try:
-    with open("security_incidents.txt", "w") as f:
-        f.write("SECURITY INCIDENTS\n")
-        f.write("=" * 50 + "\n")
-        f.write(f"total incidents: {len(security_incidents)}\n\n")
+    # incorrect login attempts
+    print("wrong password:", user1.authenticate("wrong1"))
+    print("wrong password:", user1.authenticate("wrong2"))
+    print("wrong password (locks account):", user1.authenticate("wrong3"))
 
-        if failed_logins:
-            f.write("brute force attempts:\n")
-            for ip, attempts in failed_logins.items():
-                if len(attempts) >= 3:
-                    f.write(f"{ip}: {len(attempts)} failed logins\n")
-            f.write("\n")
+    # attempt login after lock
+    print("attempt after lock:", user1.authenticate("UserPass123"))
 
-        if forbidden_access:
-            f.write("forbidden access:\n")
-            for incident in forbidden_access:
-                f.write(f"{incident}\n")
+    # unlock account
+    admin.authenticate("AdminPass123")
+    user1.unlock_account(admin)
 
-        for incident in security_incidents:
-            f.write(f"{incident}\n")
+    print("login after unlock:", user1.authenticate("UserPass123"))
 
-except PermissionError:
-    logging.error("cannot write security_incidents.txt")
+    # safe display
+    print("safe user info:", user1.display_info())
 
-#write error log
-try:
-    with open("error_log.txt", "w") as f:
-        f.write("HTTP ERRORS\n")
-        f.write("=" * 50 + "\n")
-        f.write(f"total errors: {len(errors)}\n\n")
-        for e in errors:
-            f.write(f"{e}\n")
-except PermissionError:
-    logging.error("cannot write error_log.txt")
-
-# final console output
-print("analysis complete")
-print(f"total requests: {total_requests}")
-print(f"security incidents: {len(security_incidents)}")
-print(f"errors detected: {len(errors)}")
-print("reports generated: summary_report.txt, security_incidents.txt, error_log.txt")
+    # attempt privilege escalation
+    try:
+        user1.set_privilege("admin")
+    except ValueError as e:
+        print("privilege escalation prevented:", e)
